@@ -1,0 +1,156 @@
+# 3D simple shear
+# LIGGGHTS Version 3.1.0
+# 2020.1.16
+
+#
+# mpirun -np $NP liggghts-3.0.5 -var try $i -var insertname in.particles-$i -var seed $RANDOM -var fric 0.1 -in in.sample
+# 
+#variable       try equal 1
+shell           mkdir   post
+shell           mkdir   test-${try}
+shell           mkdir   test-${try}/post
+shell           mkdir   test-${try}/mesh
+log             post/Assembly-${try}.log
+
+# --------Parameter for debug------------------------
+#variable       insertname string in.particles
+#variable       norm_press equal 1.0e6
+#variable       fric equal 0.1                             # friction coefficient used in sample preparation
+variable        insertname2 string in.particles_wall
+variable        fric_wall equal 0.1                        # friction coefficient used in sample preparation
+variable        length equal 0.04
+variable        depth equal 0.02
+variable        shear_rate equal 0.1
+variable        shear_strain equal 2.0
+variable        delta_strain equal 0.01
+variable        time_step equal 5e-8
+
+variable        applied_force equal ${norm_press}*${length}*${depth}
+variable        delta_time equal ${delta_strain}/${shear_rate}
+#variable       cycle_dump equal ${delta_time}/${time_step}
+variable        cycle_dump equal 200000
+
+variable        max_vel equal 0.1
+variable        max_vel_consolidation equal 0.1
+variable        max_vel_servo equal 0.1
+
+# --------Initialization------------------------
+units           si
+dimension       3
+boundary        p f p
+newton          off
+atom_style      granular
+atom_modify     map array
+neighbor        0.002 bin
+neigh_modify    delay 0
+communicate     single vel yes
+region          reg  block 0.0 0.04 -0.012 0.032 0.0 0.020
+create_box      3 reg
+
+# --------Material property settings------------------------ 
+fix             m1 all property/global youngsModulus peratomtype 25e9 25e9 25e9
+fix             m2 all property/global poissonsRatio peratomtype 0.25 0.25 0.25
+fix             m3 all property/global coefficientRestitution peratomtypepair 3 0.87 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0
+fix             m4 all property/global coefficientFriction peratomtypepair 3 ${fric} ${fric_wall} 0 ${fric_wall} 0 0 0 0 0
+pair_style      gran model hertz tangential history
+pair_coeff      * *
+timestep        ${time_step}
+
+#--------Particles and wall insert and setting------------------------ 
+jump            ${insertname} insert
+label           continue
+jump            ${insertname2} insert2
+label           continue2
+
+region          top_gran block 0.0 0.04 0.028 0.0305 0.0 0.02    # width of particles wall = 0.0025
+group           top_gran region top_gran
+region          bottom_gran block 0.0 0.04 -0.0105 -0.008 0.0 0.02
+group           bottom_gran region bottom_gran
+
+fix             rigid_wall1 top_gran rigid single force * off on off torque * off off off 
+fix             rigid_wall2 bottom_gran rigid single force * off on off torque * off off off 
+group           sample type 1
+
+fix             topwall all mesh/surface/stress file topwall.stl type 3 stress on
+fix             bottomwall all mesh/surface/stress file bottomwall.stl type 3 stress on 
+fix             granwall all wall/gran model hertz tangential history mesh n_meshes 2 meshes topwall bottomwall
+
+variable        mean_force equal (abs(f_topwall[2])+abs(f_bottomwall[2]))/2
+#variable       move_speed equal v_max_vel*(abs(1-v_mean_force/v_applied_force))*(abs(1-v_mean_force/v_applied_force))
+#variable       move_speed equal v_max_vel*((1-v_mean_force/v_applied_force)+abs(1-v_mean_force/v_applied_force))*0.5
+variable        move_speed equal v_max_vel*(1-v_mean_force/v_applied_force)
+variable        stop_criterion equal (1-v_mean_force/v_applied_force)
+variable        topmove equal -0.5*v_move_speed
+variable        bottommove equal 0.5*v_move_speed
+variable        zero equal 0
+variable        wall_rigion_dist equal 0.0015‬  # distance between wall and boundary
+
+fix             boundary all domain
+variable        y_max equal f_boundary[4]
+variable        y_min equal f_boundary[3]
+variable        initial_rigion equal 0.044     # initial distance of boundary in y direction
+variable        y_size equal v_y_max-v_y_min-0.003
+variable        box_move equal 0
+variable        y_boxchange equal 0
+
+fix             topmove all move/mesh mesh topwall linear/variable v_zero v_topmove v_zero
+fix             bottommove all move/mesh mesh bottomwall linear/variable v_zero v_bottommove v_zero
+fix             ydeform all deform 1 y variable v_y_boxchange v_box_move remap none
+
+# --------Variables and computations at sample generation and confining stage------------------------ 
+compute         cforce all pair/gran/local id pos force   #Need to define this compute before first run
+compute         rotke all erotate/sphere
+compute         t all temp
+compute         s all pressure t virial
+
+compute         rad all property/atom radius
+variable        rad atom c_rad
+variable        rad2 atom v_rad*v_rad*v_rad
+compute         rad2 all reduce sum v_rad2
+variable        par_vol equal c_rad2*PI*4/3
+variable        solid_fraction equal v_par_vol/(${length}*(v_y_size)*${depth})
+variable        rad3 atom v_rad*v_rad*v_rad
+variable        volume atom 4/3*v_rad3*PI
+variable        mass atom 2900*v_volume
+compute         vol_all all reduce sum v_volume
+variable        energy equal ke
+
+fix             1 sample nve/sphere        # do not nve rigid particles
+thermo          1000
+thermo_style    custom step time dt atoms ke v_y_size v_solid_fraction v_applied_force v_mean_force v_move_speed
+thermo_modify   lost ignore norm no
+compute_modify  thermo_temp dynamic yes
+
+run             1
+
+set             group all density 2900
+set             group all mass v_mass
+
+variable        y_boxchange equal v_y_size-(${initial_rigion}-0.003)-v_move_speed*dt
+variable        box_move equal -1.0*v_move_speed
+
+# --------Run for sample denstification------------------------ 
+dump            particle_info all custom ${cycle_dump} test-${try}/post/dump-*.sample id type radius x y z vx vy vz fx fy fz omegax omegay omegaz
+dump            mesh_dump1 all mesh/stl ${cycle_dump} test-${try}/mesh/top-*.stl topwall
+dump            mesh_dump2 all mesh/stl ${cycle_dump} test-${try}/mesh/bottom-*.stl bottomwall
+run             2000000 upto
+
+label           consolidation
+variable        y_boxchange equal 0
+variable        box_move equal 0
+run             1
+variable        y_boxchange equal v_y_size-${y_size}-v_move_speed*dt
+variable        box_move equal -1.0*v_move_speed
+run             199999
+if              "${stop_criterion}>0.01" then "jump in.sample consolidation"
+if              "${energy}>0.00001" then "jump in.sample consolidation"
+
+undump          mesh_dump1
+undump          mesh_dump2
+unfix           granwall
+unfix           topmove
+unfix           bottommove
+unfix           ydeform
+unfix           topwall
+unfix           bottomwall
+write_restart   post/Assembly-${try}.restart

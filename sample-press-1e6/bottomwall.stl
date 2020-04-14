@@ -1,0 +1,16 @@
+solid LIGGGHTS_STL_EXPORT
+  facet normal 0 -1 0
+    outer loop
+      vertex 0.00 -0.0105 0.00
+      vertex 0.04 -0.0105 0.00
+      vertex 0.04 -0.0105 0.02
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex 0.04 -0.0105 0.02
+      vertex 0.00 -0.0105 0.02
+      vertex 0.00 -0.0105 0.00
+    endloop
+  endfacet
+endsolid LIGGGHTS_STL_EXPORT
