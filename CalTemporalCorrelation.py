@@ -335,11 +335,11 @@ def TemporalCorrelation(case, test_id, shear_strain, shear_rate, steady_strain, 
 
     file_path = os.path.pardir + '/' + case
     # dump files
-    dump_path = file_path + '/test-' + str(test_id) + '/particle potential'
+    dump_path = file_path + '/test-' + str(test_id) + '/post'
     list_dir = os.listdir(dump_path)
     dump_frame = []
-    file_prefix = 'Particle potential-'
-    file_suffix = '.dump'
+    file_prefix = 'dump-'
+    file_suffix = '.sample'
     prefix_len = len(file_prefix)
     suffix_len = len(file_suffix)
     for file in list_dir:
@@ -366,7 +366,7 @@ def TemporalCorrelation(case, test_id, shear_strain, shear_rate, steady_strain, 
     powerlaw = lambda x, amp, index: amp*(x**index)
 
     strain_interval = np.arange(1.0*strain_window, 40*strain_window, strain_window)
-    frame_window = int(strain_window/shear_rate/time_step)
+    frame_window = int(round(strain_window/shear_rate/time_step))
     frame_interval = np.arange(1*frame_window, 40*frame_window, frame_window)
 
     frame_num = len(frame_list)
@@ -651,7 +651,7 @@ if __name__ == '__main__':
     steady_strain = 1.0
     strain_window = 0.01
     scenario = 50
-    d50 = 0.0010
+    d50 = 0.001
     argList = argv
     argc = len(argList)
     i = 0

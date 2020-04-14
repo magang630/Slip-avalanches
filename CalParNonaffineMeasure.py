@@ -226,8 +226,8 @@ def CalParNonaffinity(case, test_id, d50, distance, neighborhood_size, shear_rat
     suffix_len = len(file_suffix)
     for file in list_dir:
         dump_frame.append(int(file[prefix_len:][:-suffix_len]))
-    dump_frame = sorted(dump_frame)
-    dump_time = (np.array(dump_frame) - np.min(dump_frame))*time_step
+    dump_frame = np.array(sorted(dump_frame))
+    dump_time = (dump_frame - np.min(dump_frame))*time_step
     frame_time = dict(zip(dump_frame, dump_time))
 
     start_frame = np.min(dump_frame)
@@ -238,7 +238,7 @@ def CalParNonaffinity(case, test_id, d50, distance, neighborhood_size, shear_rat
     frame_list = frame_list.astype(int)
 
     time_window = strain_window/shear_rate
-    frame_window = int(time_window/time_step)
+    frame_window = int(round(time_window/time_step))
 
     # reference frame specified by variable start_frame
     # particle_info = open(dump_path+'/dump-'+str(start_frame)+'.sample','r')

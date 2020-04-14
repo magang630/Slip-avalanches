@@ -31,7 +31,6 @@ def rightTrim(input, suffix):
         input = input + suffix
     return input
 
-
 def mkdir(path):
     # 引入模块
     import os
@@ -58,241 +57,6 @@ def mkdir(path):
         print(path + ' 目录已存在')
         return False
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Distance of two vertexes
-#
-def vertex_distance(a, b):
-    return np.sqrt((a[0] - b[0])**2.0 + (a[1] - b[1])**2.0 + (a[2] - b[2])**2.0)
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# array normalization
-#
-def array_normalization(array):
-    return (array - np.min(array))/(np.mean(array) - np.min(array))
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# split the arr into N chunks
-#
-def chunks(arr, m):
-    n = int(np.ceil(len(arr)/float(m)))
-    return [arr[i:i + n] for i in range(0, len(arr), n)]
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# q-Exponential function
-#
-def func(x, q, lamda):
-    return (2-q)*lamda*(1-lamda*(1-q)*x)**(1/(1-q))
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# non-gaussian parameter
-#
-def non_gaussian(array, dimension):
-    if dimension == 1:
-        Cn3 = 1.0/3.0
-    elif dimension == 2:
-        Cn3 = 1.0/2.0
-    elif dimension == 3:
-        Cn3 = 3.0/5.0
-    return Cn3*np.mean(array**4.0)/np.power(np.mean(array**2.0),2.0) - 1.0
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# standard error
-#
-def standard_error(sample):
-    std=np.std(sample, ddof=0)
-    standard_error=std/np.sqrt(len(sample))
-    return standard_error
-
-#################################################
-# Author : 余欢
-# Date : Dec 28, 2015    4:09:29 PM
-# company : 南京师范大学--大数据实验室
-# description : 清理异常值
-# https://blog.csdn.net/redaihanyu/article/details/50421773
-#################################################
-def is_outlier(points, threshold=2):
-    """
-    返回一个布尔型的数组，如果数据点是异常值返回True，反之，返回False。
-
-    数据点的值不在阈值范围内将被定义为异常值
-    阈值默认为3.5
-    """
-    # 转化为向量
-    if len(points.shape) == 1:
-        points = points[:,None]
-
-    # 数组的中位数
-    median = np.median(points, axis=0)
-
-    # 计算方差
-    diff = np.sum((points - median)**2, axis=-1)
-    #标准差
-    diff = np.sqrt(diff)
-    # 中位数绝对偏差
-    med_abs_deviation = np.median(diff)
-
-    # compute modified Z-score
-    # http://www.itl.nist.gov/div898/handbook/eda/section4/eda43.htm#Iglewicz
-    modified_z_score = 0.6745*diff/med_abs_deviation
-
-    # return a mask for each outlier
-    return modified_z_score > threshold
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# If your data is well-behaved, you can fit a power-law function by first converting to a linear equation by using the logarithm.
-# Then use the optimize function to fit a straight line. Notice that we are weighting by positional uncertainties during the fit.
-# Also, the best-fit parameters uncertainties are estimated from the variance-covariance matrix.
-# You should read up on when it may not be appropriate to use this form of error estimation.
-# Refereces: https://scipy-cookbook.readthedocs.io/items/FittingData.html#Fitting-a-power-law-to-data-with-errors
-#
-def powerlaw(x, amp, index):
-    # Define function for calculating a power law
-    powerlaw = lambda x, amp, index: amp*(x**index)
-
-def fit_powerlaw(xdata, ydata, yerr, weight=False):
-    ##########
-    # Fitting the data -- Least Squares Method
-    ##########
-
-    # Power-law fitting is best done by first converting
-    # to a linear equation and then fitting to a straight line.
-    # Note that the `logyerr` term here is ignoring a constant prefactor.
-    #
-    #  y = a*x^b
-    #  log(y) = log(a) + b*log(x)
-    #
-
-    # Define function for calculating a power law
-    powerlaw = lambda x, amp, index: amp*(x**index)
-
-    logx = np.log10(xdata)
-    logy = np.log10(ydata)
-    if weight:
-        logyerr = yerr/ydata
-    else:
-        logyerr = np.ones(len(logx))
-    # logyerr[np.where(logyerr == 0)] = 1
-
-    # define our (line) fitting function
-    fitfunc = lambda p, x: p[0] + p[1]*x
-    errfunc = lambda p, x, y, err: (y - fitfunc(p, x))/err
-
-    pinit = [10.0, -10.0]
-    out = optimize.leastsq(errfunc, pinit, args=(logx, logy, logyerr), full_output=1)
-
-    pfinal = out[0]
-    covar = out[1]
-    # print(pfinal)
-    # print(covar)
-
-    index = pfinal[1]
-    amp = 10.0**pfinal[0]
-
-    indexErr = np.sqrt(covar[1][1])
-    ampErr = np.sqrt(covar[0][0])*amp
-
-    ##########
-    # Plotting data
-    ##########
-
-    # plt.clf()
-    # plt.subplot(2, 1, 1)
-    # plt.plot(xdata, powerlaw(xdata, amp, index))  # Fit
-    # plt.errorbar(xdata, ydata, yerr=yerr, fmt='k.')  # Data
-    # plt.text(5, 6.5, 'Ampli = %5.2f +/- %5.2f' % (amp, ampErr))
-    # plt.text(5, 5.5, 'Index = %5.2f +/- %5.2f' % (index, indexErr))
-    # plt.title('Best Fit Power Law')
-    # plt.xlabel('X')
-    # plt.ylabel('Y')
-    # plt.xlim(1, 11)
-    #
-    # plt.subplot(2, 1, 2)
-    # plt.loglog(xdata, powerlaw(xdata, amp, index))
-    # plt.errorbar(xdata, ydata, yerr=yerr, fmt='k.')  # Data
-    # plt.xlabel('X (log scale)')
-    # plt.ylabel('Y (log scale)')
-    # plt.xlim(1.0, 11)
-    # plt.show()
-
-    return pfinal
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Power law distribution with exponential cutoff
-# Truncated power law
-#
-def truncated_powerlaw(x, amp, alpha, beta):
-    return amp*x**(-alpha)*np.exp(-x/beta)
-
-def log_truncated_powerlaw(x, amp, alpha, beta):
-    # power law decay
-    return np.log10(amp) - alpha*np.log10(x) - (x/beta)*np.log10(np.e)
-
-def fit_truncated_powerlaw(xdata, ydata, yerror):
-
-    popt, pcov = optimize.curve_fit(log_truncated_powerlaw, xdata, np.log10(ydata), bounds=([0, 0, 0], [100, 100, 100]))
-    amp, alpha, beta = popt
-    return popt
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-def plot_fittingline(ax, sample, power_law, xdata, xerr, ydata, yerr, xlabel, ylabel):
-
-    # Define function for calculating a power law
-    powerlaw = lambda x, amp, index: amp*(x**index)
-    truncated_powerlaw = lambda x, amp, alpha, beta: amp*x**(-alpha)*np.exp(-x/beta)
-
-    # plt.figure(figsize=(6,6))
-    if ylabel == 'stress drop':
-        ax.errorbar(xdata, ydata, xerr=xerr, yerr=yerr, fmt='o', ecolor='b', color='b', elinewidth=2, capsize=4)
-    else:
-        ax.scatter(xdata, ydata, marker='o', color='b')
-        # ax.errorbar(xdata, ydata, xerr=xerr, yerr=yerr, fmt='o', ecolor='b', color='b', elinewidth=2, capsize=4)
-
-    if len(power_law) == 2:
-        amp = 10**power_law[0]
-        index = power_law[1]
-        ax.plot(xdata, powerlaw(xdata, amp, index), color="r", linewidth=2)  #画拟合直线
-        ax.text(5e-5, 5e-3, "τ= %4.3f" %index, fontsize=12)
-    else:
-        amp = power_law[0]
-        alpha = power_law[1]
-        beta = power_law[2]
-        ax.plot(xdata, truncated_powerlaw(xdata, amp, alpha, beta), color="r", linewidth=2)  #画拟合直线
-        ax.text(1e-4, 1e-1, "τ= %4.3f, s$\mathregular{_*}$= %4.3f" % (alpha, beta), fontsize=12)
-
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_xlabel(xlabel, fontsize=12)
-    ax.set_ylabel(ylabel, fontsize=12)
-    ax.tick_params(axis='both', labelsize=12)
-    # ax.legend(fontsize=12)
-    # plt.savefig(file_path, dpi=500, bbox_inches = 'tight')
-    # plt.show()
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Bootstrap resampling with Python
-# https://nbviewer.jupyter.org/gist/aflaxman/6871948
-def bootstrap_resample(X, n=None):
-    """ Bootstrap resample an array_like
-    Parameters
-    ----------
-    X : array_like
-      data to resample
-    n : int, optional
-      length of resampled array, equal to len(X) if n==None
-    Results
-    -------
-    returns X_resamples
-    """
-    if isinstance(X, pd.Series):
-        X = X.copy()
-        X.index = range(len(X.index))
-    if n == None:
-        n = len(X)
-
-    resample_i = np.floor(np.random.rand(n)*len(X)).astype(int)
-    X_resample = np.array(X[resample_i])  # TODO: write a test demonstrating why array() is important
-    return X_resample
 
 def StressStrainCurve(case, test_id, shear_rate, delta_strain, strain_interval, filter_method, filter_param):
 
@@ -304,20 +68,29 @@ def StressStrainCurve(case, test_id, shear_rate, delta_strain, strain_interval, 
     sns.set()
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # 1. Array initialization
+    # 1. Visualization setting
     #
-    domain_depth = 0.02
-    domain_length = 0.04
-    stress_drop = []
-    strain_duration = []
-    data_index = []
+    # sns.set_style('ticks')
+    plt.style.use('seaborn-paper')
+    my_palette = "bright"  # deep, muted, pastel, bright, dark, colorblind, Set3, husl, Paired
+    sns.set_palette(my_palette)
+    #不同类别用不同颜色和样式绘图
+    # colors = ['c', 'b', 'g', 'r', 'm', 'y', 'k', 'w']
+    # colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'b']
+    # colors = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
+    colors = sns.color_palette(my_palette, 10)
+    markers = ['o', '^', 'v', 's', 'D', 'v', 'p', '*', '+']
+    # markers = ['*', 'o', '^', 'v', 's', 'p', 'D', 'X']
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # 2. Load data set
     #
+    domain_depth = 0.02
+    domain_length = 0.04
+
     force_info = open(data_path + '/output.dat', 'r')
     alllines = force_info.readlines()
-    lines = alllines[4001:]
+    lines = alllines[81:]
     force_info.close()
     for i in range(len(lines)):
         if (lines[i] == '\n'): del lines[i]
@@ -332,36 +105,12 @@ def StressStrainCurve(case, test_id, shear_rate, delta_strain, strain_interval, 
 
     time0 = time[0]
     height0 = system_height[0]
+    shear_time = time - time0
     shear_strain = (time - time0)*shear_rate
     volumetric_strain = (height0 - system_height)/height0
     normal_pressure = normal_force/(domain_depth*domain_length)*1e-6
     shear_stress = shear_force_bot/(domain_depth*domain_length)*1e-6
     shear_stress /= np.mean(normal_pressure)
-
-    # force_info = open(data_path + '/Particle assembly stress.dat', 'r')
-    # alllines = force_info.readlines()
-    # lines = alllines
-    # force_info.close()
-    # for i in range(len(lines)):
-    #     if (lines[i] == '\n'): del lines[i]
-    # time1 = np.array([float(line.strip().split(',')[1]) for line in lines])  # 字段以空格分隔，这里取得是第2列
-    # sxx   = np.array([float(line.strip().split(',')[2]) for line in lines])  # 字段以空格分隔，这里取得是第3列
-    # syy   = np.array([float(line.strip().split(',')[3]) for line in lines])  # 字段以空格分隔，这里取得是第4列
-    # szz   = np.array([float(line.strip().split(',')[4]) for line in lines])  # 字段以空格分隔，这里取得是第5列
-    # sxy   = np.array([float(line.strip().split(',')[5]) for line in lines])  # 字段以空格分隔，这里取得是第6列
-    # sxz   = np.array([float(line.strip().split(',')[6]) for line in lines])  # 字段以空格分隔，这里取得是第7列
-    # syz   = np.array([float(line.strip().split(',')[7]) for line in lines])  # 字段以空格分隔，这里取得是第8列
-    # sxy = abs(sxy)*1e-6
-
-    # plt.figure(figsize=(8,6))
-    # plt.plot(time1, sxy, linewidth=2, label='sxy')
-    # plt.xlabel('time', fontsize=15)
-    # plt.ylabel('sxy', fontsize=15)
-    # plt.xticks(fontsize=15)
-    # plt.yticks(fontsize=15)
-    # plt.legend(fontsize=15)
-    # plt.grid(axis='both', color='grey', linestyle='--', lw=0.5, alpha=0.5)
-    # plt.show()
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # 2.1 Sampling from the original data set
@@ -394,25 +143,36 @@ def StressStrainCurve(case, test_id, shear_rate, delta_strain, strain_interval, 
         # https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter
         # A Savitzky–Golay filter is a digital filter that can be applied to a set of digital data points for the purpose of smoothing the data.
         shear_stress_fld = savgol_filter(shear_stress, window_length=int(filter_param), polyorder=3)
+    elif 'ewma' in filter_method:
+        # Exponentially-weighted moving average
+        # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.ewm.html?highlight=ewma
+        # http://connor-johnson.com/2014/02/01/smoothing-with-exponentially-weighted-moving-averages/
+        df_shear_stress_fwd = pd.Series(shear_stress)
+        df_shear_stress_bwd = pd.Series(shear_stress[::-1])
+        fwd = df_shear_stress_fwd.ewm(span=filter_param).mean() # take EWMA in fwd direction
+        bwd = df_shear_stress_bwd.ewm(span=filter_param).mean() # take EWMA in bwd direction
+        shear_stress_fld = np.vstack((fwd, bwd[::-1]))          # lump fwd and bwd together
+        shear_stress_fld = np.mean(shear_stress_fld, axis=0)    # average
     else:
         print('original data')
 
-    fig = plt.figure(figsize=(8, 6))
+    fig = plt.figure(figsize=(8, 4))
     ax1 = fig.add_subplot(111)
-    ax1.plot(shear_strain, shear_stress, color='k', linewidth=1, label='original stress data')
-    ax1.plot(shear_strain, shear_stress_fld, color='r', linewidth=2, label='filtered stress data')
-    ax1.set_xlabel('shear strain, $γ$', fontsize=15, labelpad=5)
-    ax1.set_ylabel('shear stress, $τ$ (MPa)', fontsize=15, labelpad=5)
-    ax1.tick_params(axis='both', labelsize=15)
-    # ax1.set_xlim(0.9, 1)
-    # ax1.set_ylim(0.24, 0.27)
+    ax1.plot(shear_strain, shear_stress, color=colors[0], alpha=0.1, linewidth=1, label='Original stress data')
+    ax1.plot(shear_strain, shear_stress_fld, color=colors[0], linewidth=1, label='Filtered stress data')
+    ax1.set_xlabel('shear strain, $\gamma$', fontsize=12, labelpad=5)
+    ax1.set_ylabel('shear stress, ' + r'$\tau$(MPa)', fontsize=12, labelpad=5)
+    ax1.tick_params(axis='both', labelsize=12)
+    ax1.set_xlim(0.5, 0.6)
+    ax1.set_ylim(0.2, 0.3)
 
     ax2 = ax1.twinx()
-    ax2.plot(shear_strain, solid_fraction, color='c', linewidth=2, label='solid fraction')
-    ax2.set_ylabel('solid fraction', fontsize=15, labelpad=5)
-    ax2.tick_params(axis="y", labelsize=15)
+    ax2.plot(shear_strain, volumetric_strain, color=colors[1], linewidth=1, label='Volumetric strain')
+    ax2.set_ylabel('volumetric strain, $\epsilon_v$', fontsize=12, labelpad=5)
+    ax2.tick_params(axis="y", labelsize=12)
+    plt.show()
 
-    fig.legend(loc='center', fontsize=15)
+    fig.legend(loc='center', fontsize=12)
     plt.grid(axis='both', color='grey', linestyle='--', lw=0.5, alpha=0.5)
     plt.grid()
     plt.savefig(output_path + '/Macroscopic responses.png', dpi=600, bbox_inches='tight')
@@ -426,13 +186,13 @@ if __name__ == '__main__':
 
     file_path = None
     file_name = None
-    case = 'shear-rate-2-press-1e6'
+    case = 'shear-rate-2-press-1e7'
     test_id = 1
-    shear_rate = 10
+    shear_rate = 2
     delta_strain = 1e-5
     strain_interval = 1e-5
     filter_method = 'median'  # savgol, gaussian, median
-    filter_param = 11
+    filter_param = 101
     argList = argv
     argc = len(argList)
     i = 0

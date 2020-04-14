@@ -153,8 +153,8 @@ def calPairCorrelation(case, test_id, d50, shear_rate, shear_strain, time_step, 
     suffix_len = len(file_suffix)
     for file in list_dir:
         dump_frame.append(int(file[prefix_len:][:-suffix_len]))
-    dump_frame = sorted(dump_frame)
-    dump_time = (np.array(dump_frame) - np.min(dump_frame))*time_step
+    dump_frame = np.array(sorted(dump_frame))
+    dump_time = (dump_frame - np.min(dump_frame))*time_step
     frame_time = dict(zip(dump_frame, dump_time))
 
     start_frame = np.min(dump_frame)

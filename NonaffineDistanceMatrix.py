@@ -359,8 +359,7 @@ def CalNaDM(case, test_id, d50, distance, neighborhood_size, shear_rate, time_st
     dict_frame_time = dict(zip(frame_list, frame_time))
     dict_frame_strain = dict(zip(frame_list, shear_strain))
     strain_window = np.array([2e-3, 4e-3, 1e-2, 2e-2, 4e-2])
-    frame_window = strain_window/shear_rate/time_step
-    frame_window = frame_window.astype(int)
+    frame_window = int(round(strain_window/shear_rate/time_step))
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Pandas DataFrame initialization

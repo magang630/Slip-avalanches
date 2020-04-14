@@ -435,7 +435,7 @@ def CalStressDrops(case, test_id, shear_rate, delta_strain, steady_strain, strai
         fwd = df_shear_stress_fwd.ewm(span=filter_param).mean() # take EWMA in fwd direction
         bwd = df_shear_stress_bwd.ewm(span=filter_param).mean() # take EWMA in bwd direction
         shear_stress_fld = np.vstack((fwd, bwd[::-1]))          # lump fwd and bwd together
-        shear_stress_fld = np.mean(shear_stress_fld, axis=0)    # average  
+        shear_stress_fld = np.mean(shear_stress_fld, axis=0)    # average
     else:
         print('original data')
 
@@ -446,7 +446,7 @@ def CalStressDrops(case, test_id, shear_rate, delta_strain, steady_strain, strai
     ax1.set_xlabel('shear strain, $\gamma$', fontsize=12, labelpad=5)
     ax1.set_ylabel('shear stress, ' + r'$\tau$(MPa)', fontsize=12, labelpad=5)
     ax1.tick_params(axis='both', labelsize=12)
-    ax1.set_xlim(0., 5)
+    # ax1.set_xlim(0., 5)
     # ax1.set_ylim(0.24, 0.27)
 
     ax2 = ax1.twinx()
@@ -725,7 +725,7 @@ def CalStressDrops(case, test_id, shear_rate, delta_strain, steady_strain, strai
     Ttol = shear_time.max() - shear_time.min()
     seismicity_rate = len(df_mainshocks)/Ttol
     characteristic_time = 1/seismicity_rate
-    df_mainshocks['Sita'] = df_mainshocks['Waiting_time']/characteristic_time
+    mainshocks_sita = df_mainshocks['Waiting_time']/characteristic_time
 
     # Foreshocks and aftershocks
     digitized = np.digitize(df_weakshocks.index, df_mainshocks.index)
@@ -758,8 +758,7 @@ def CalStressDrops(case, test_id, shear_rate, delta_strain, steady_strain, strai
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # 6.2 Frequency density of inter-event times, in terms of θ = τ/τ∗.
     #
-    sita = df_mainshocks['Sita'].values
-    bin_value, bin_range, frequency, digitized = histgram_logform(sita, np.min(sita), step=0.05)
+    bin_value, bin_range, frequency, digitized = histgram_logform(mainshocks_sita, np.min(mainshocks_sita), step=0.05)
     data_selected = (frequency > 1e-6)
     fit_params1 = fit_truncated_powerlaw(bin_value[data_selected], frequency[data_selected], np.zeros(np.sum(data_selected == True)))
     sita_pdf = pd.DataFrame(np.stack((bin_value, frequency), axis=1), columns=['Sita', 'PDF'])
@@ -818,11 +817,11 @@ if __name__ == '__main__':
 
     file_path = None
     file_name = None
-    case = 'shear-rate-0.2-press-1e6'
+    case = 'shear-rate-2-press-1e6'
     test_id = 1
-    shear_rate = 0.2
+    shear_rate = 2
     delta_strain = 1e-5
-    steady_strain = 1.0
+    steady_strain = 0.5
     strain_interval = 1e-5
     filter_method = 'median'  # savgol, gaussian, median, ewma
     filter_param = 101

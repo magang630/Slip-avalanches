@@ -188,7 +188,7 @@ def bootstrap_resample(X, n=None):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-def hist_fit(df_clusters, d50, step=0.02):
+def hist_fit(df_clusters, d50, step=0.05):
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # 1. Variable definition
@@ -354,7 +354,7 @@ def DataAnalysis(case, test_id, d50, strain_window, selected_ratio, linkage, k_s
     writer = pd.ExcelWriter(output_path + '/Cluster analysis-' + linkage + '.xlsx')
     for idx, cl_type in enumerate(category):
         df_clusters = df_allframe_clusters.loc[(df_allframe_clusters['Type'] == cl_type)]
-        fit_params, df_cluster_statistics = hist_fit(df_clusters, d50, step=0.02)
+        fit_params, df_cluster_statistics = hist_fit(df_clusters, d50, step=0.05)
         df_cluster_statistics.to_excel(writer, sheet_name='Statistics of ' + cl_type + ' clusters')
 
         ax1.scatter(df_cluster_statistics['Cluster_size'], df_cluster_statistics['Frequency'], s=20, color=colors[idx], marker=markers[idx])
@@ -371,7 +371,7 @@ def DataAnalysis(case, test_id, d50, strain_window, selected_ratio, linkage, k_s
         df_resampled_clusters = df_allframe_clusters.loc[frame_resample]
         for idx, cl_type in enumerate(category):
             df_clusters = df_resampled_clusters[(df_resampled_clusters['Type'] == cl_type)]
-            fit_params, df_cluster_statistics = hist_fit(df_clusters, d50, step=0.02)
+            fit_params, df_cluster_statistics = hist_fit(df_clusters, d50, step=0.05)
             fit_params.extend([cl_type])
             fit_params_bootstrap.append(fit_params)
 

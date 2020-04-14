@@ -528,7 +528,7 @@ def ParticleStatistics(case, test_id, shear_strain, shear_rate, steady_strain, t
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # 4. Par D2min frequency distribution
     #
-    D2min_value, D2min_range, D2min_frequency, D2min_fit_params = histgram_logform(frame_par_D2min.reshape(1, frame_par_D2min.size), step=0.1, func='power')
+    D2min_value, D2min_range, D2min_frequency, D2min_fit_params = histgram_logform(frame_par_D2min.reshape(1, frame_par_D2min.size), step=0.05, func='power')
     df_D2min_frequency = pd.DataFrame(np.stack((D2min_value, D2min_frequency), axis=1), columns=['D2min', 'PDF'])
     ax1.scatter(D2min_value, D2min_frequency, s=20, color=colors[0], marker=markers[0])
     # ax1.plot(D2min_value, powerlaw(D2min_value, 10**D2min_fit_params[0], D2min_fit_params[1]), linestyle=':', color=colors[0], linewidth=2,
@@ -536,7 +536,7 @@ def ParticleStatistics(case, test_id, shear_strain, shear_rate, steady_strain, t
 
     frame_fit_params = [[] for i in range(frame_num)]
     for k, cl in enumerate(df_par_D2min.columns):
-        D2min_value, D2min_range, D2min_frequency, D2min_fit_params = histgram_logform(df_par_D2min[cl].values/df_par_D2min[cl].mean(), step=0.1, func='power')
+        D2min_value, D2min_range, D2min_frequency, D2min_fit_params = histgram_logform(df_par_D2min[cl].values/df_par_D2min[cl].mean(), step=0.05, func='power')
         frame_fit_params[k] = D2min_fit_params
 
     df_D2min_fit_params = pd.DataFrame(np.array(frame_fit_params), columns=['Amp', 'Index'])
@@ -558,7 +558,7 @@ def ParticleStatistics(case, test_id, shear_strain, shear_rate, steady_strain, t
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # 4.2 Par shear strain frequency distribution
     #
-    shear_strain_value, shear_strain_range, shear_strain_frequency, shear_strain_fit_params = histgram_logform(frame_par_shear_strain.reshape(1, frame_par_shear_strain.size), step=0.1, func='power')
+    shear_strain_value, shear_strain_range, shear_strain_frequency, shear_strain_fit_params = histgram_logform(frame_par_shear_strain.reshape(1, frame_par_shear_strain.size), step=0.05, func='power')
     df_shear_strain_frequency = pd.DataFrame(np.stack((shear_strain_value, shear_strain_frequency), axis=1), columns=['Shear strain', 'PDF'])
     ax2.scatter(shear_strain_value, shear_strain_frequency, s=20, color=colors[1], marker=markers[1])
     # ax2.plot(shear_strain_value, powerlaw(shear_strain_value, 10**shear_strain_fit_params[0], shear_strain_fit_params[1]), linestyle=':', color=colors[1], linewidth=2,
@@ -566,7 +566,7 @@ def ParticleStatistics(case, test_id, shear_strain, shear_rate, steady_strain, t
 
     frame_fit_params = [[] for i in range(frame_num)]
     for k, cl in enumerate(df_par_shear_strain.columns):
-        shear_strain_value, shear_strain_range, shear_strain_frequency, shear_strain_fit_params = histgram_logform(df_par_shear_strain[cl].values/df_par_shear_strain[cl].mean(), step=0.1, func='power')
+        shear_strain_value, shear_strain_range, shear_strain_frequency, shear_strain_fit_params = histgram_logform(df_par_shear_strain[cl].values/df_par_shear_strain[cl].mean(), step=0.05, func='power')
         frame_fit_params[k] = shear_strain_fit_params
 
     df_shear_strain_fit_params = pd.DataFrame(np.array(frame_fit_params), columns=['Amp', 'Index'])
@@ -588,7 +588,7 @@ def ParticleStatistics(case, test_id, shear_strain, shear_rate, steady_strain, t
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # 5. Particle potential energy frequency distribution
     #
-    # potential_value, potential_range, potential_frequency, potential_fit_params = histgram_logform(frame_par_potential.reshape(1, frame_par_potential.size), step=0.1, func='power')
+    # potential_value, potential_range, potential_frequency, potential_fit_params = histgram_logform(frame_par_potential.reshape(1, frame_par_potential.size), step=0.05, func='power')
     # df_potential_frequency = pd.DataFrame(np.stack((potential_value, potential_frequency), axis=1), columns=['U', 'PDF'])
     # ax2.scatter(potential_value, potential_frequency, s=20, color=colors[1], marker=markers[1])
     # # ax2.plot(potential_value, powerlaw(potential_value, 10**potential_fit_params[0], potential_fit_params[1]), linestyle=':', color=colors[1], linewidth=2,
@@ -596,7 +596,7 @@ def ParticleStatistics(case, test_id, shear_strain, shear_rate, steady_strain, t
     #
     # frame_fit_params = [[] for i in range(frame_num)]
     # for k, cl in enumerate(df_par_potential.columns):
-    #     potential_value, potential_range, potential_frequency, potential_fit_params = histgram_logform(df_par_potential[cl].values/df_par_potential[cl].mean(), step=0.1, func='power')
+    #     potential_value, potential_range, potential_frequency, potential_fit_params = histgram_logform(df_par_potential[cl].values/df_par_potential[cl].mean(), step=0.05, func='power')
     #     frame_fit_params[k] = potential_fit_params
     #
     # df_potential_fit_params = pd.DataFrame(np.array(frame_fit_params), columns=['Amp', 'Index'])
@@ -688,7 +688,7 @@ if __name__ == '__main__':
     steady_strain = 1.0
     strain_window = 0.001
     scenario = 100
-    d50 = 0.0010
+    d50 = 0.001
     argList = argv
     argc = len(argList)
     i = 0

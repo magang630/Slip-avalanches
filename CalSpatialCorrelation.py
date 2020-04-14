@@ -412,11 +412,11 @@ def CalSpatialCorrelation(case, test_id, d50, shear_strain, shear_rate, time_ste
 
     file_path = os.path.pardir + '/' + case
     # dump files
-    dump_path = file_path + '/test-' + str(test_id) + '/particle potential'
+    dump_path = file_path + '/test-' + str(test_id) + '/post'
     list_dir = os.listdir(dump_path)
     dump_frame = []
-    file_prefix = 'Particle potential-'
-    file_suffix = '.dump'
+    file_prefix = 'dump-'
+    file_suffix = '.sample'
     prefix_len = len(file_prefix)
     suffix_len = len(file_suffix)
     for file in list_dir:
