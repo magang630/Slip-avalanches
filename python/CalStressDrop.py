@@ -446,7 +446,7 @@ def CalStressDrops(case, test_id, shear_rate, delta_strain, steady_strain, strai
     ax1.set_xlabel('shear strain, $\gamma$', fontsize=12, labelpad=5)
     ax1.set_ylabel('shear stress, ' + r'$\tau$(MPa)', fontsize=12, labelpad=5)
     ax1.tick_params(axis='both', labelsize=12)
-    # ax1.set_xlim(0., 5)
+    ax1.set_xlim(0., 5)
     # ax1.set_ylim(0.24, 0.27)
 
     ax2 = ax1.twinx()
@@ -821,10 +821,10 @@ if __name__ == '__main__':
     test_id = 1
     shear_rate = 2
     delta_strain = 1e-5
-    steady_strain = 0.5
+    steady_strain = 1.0
     strain_interval = 1e-5
-    filter_method = 'median'  # savgol, gaussian, median, ewma
-    filter_param = 101
+    filter_method = 'ewma'  # savgol, gaussian, median, ewma
+    filter_param = 11
     threshold = 1e-5
     M0 = 1e-2
     k_sampling = 1000

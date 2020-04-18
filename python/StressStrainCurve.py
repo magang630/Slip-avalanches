@@ -128,55 +128,81 @@ def StressStrainCurve(case, test_id, shear_rate, delta_strain, strain_interval, 
     # [1] Niiyama, T., Wakeda, M., Shimokawa, T., Ogata, S., 2019. Structural relaxation affecting shear-transformation avalanches in metallic glasses. Phys. Rev. E 100, 1–10.
     # [2] Cao, P., Short, M.P., Yip, S., 2019. Potential energy landscape activations governing plastic flows in glass rheology. Proc. Natl. Acad. Sci. U. S. A. 116, 18790–18797.
 
-    if 'gaussian' in filter_method:
-        # https: // docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.gaussian_filter1d.html
-        shear_stress_fld = gaussian_filter1d(shear_stress, sigma=filter_param) # standard deviation of shear stress
-    elif 'median' in filter_method:
-        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.median_filter.html
-        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.medfilt.html
-        shear_stress_fld = medfilt(shear_stress, kernel_size=int(filter_param))
-        # shear_stress_fld = median_filter(shear_stress, size=filter_param, mode='nearest')
-    elif 'savgol' in filter_method:
-        # Apply a Savitzky-Golay filter to an array
-        # https://codeday.me/bug/20170710/39369.html
-        # http://scipy.github.io/devdocs/generated/scipy.signal.savgol_filter.html
-        # https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter
-        # A Savitzky–Golay filter is a digital filter that can be applied to a set of digital data points for the purpose of smoothing the data.
-        shear_stress_fld = savgol_filter(shear_stress, window_length=int(filter_param), polyorder=3)
-    elif 'ewma' in filter_method:
-        # Exponentially-weighted moving average
-        # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.ewm.html?highlight=ewma
-        # http://connor-johnson.com/2014/02/01/smoothing-with-exponentially-weighted-moving-averages/
-        df_shear_stress_fwd = pd.Series(shear_stress)
-        df_shear_stress_bwd = pd.Series(shear_stress[::-1])
-        fwd = df_shear_stress_fwd.ewm(span=filter_param).mean() # take EWMA in fwd direction
-        bwd = df_shear_stress_bwd.ewm(span=filter_param).mean() # take EWMA in bwd direction
-        shear_stress_fld = np.vstack((fwd, bwd[::-1]))          # lump fwd and bwd together
-        shear_stress_fld = np.mean(shear_stress_fld, axis=0)    # average
-    else:
-        print('original data')
+    # if 'gaussian' in filter_method:
+    #     # https: // docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.gaussian_filter1d.html
+    #     shear_stress_fld = gaussian_filter1d(shear_stress, sigma=filter_param) # standard deviation of shear stress
+    # elif 'median' in filter_method:
+    #     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.median_filter.html
+    #     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.medfilt.html
+    #     shear_stress_fld = medfilt(shear_stress, kernel_size=int(filter_param))
+    #     # shear_stress_fld = median_filter(shear_stress, size=filter_param, mode='nearest')
+    # elif 'savgol' in filter_method:
+    #     # Apply a Savitzky-Golay filter to an array
+    #     # https://codeday.me/bug/20170710/39369.html
+    #     # http://scipy.github.io/devdocs/generated/scipy.signal.savgol_filter.html
+    #     # https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter
+    #     # A Savitzky–Golay filter is a digital filter that can be applied to a set of digital data points for the purpose of smoothing the data.
+    #     shear_stress_fld = savgol_filter(shear_stress, window_length=int(filter_param), polyorder=3)
+    # elif 'ewma' in filter_method:
+    #     # Exponentially-weighted moving average
+    #     # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.ewm.html?highlight=ewma
+    #     # http://connor-johnson.com/2014/02/01/smoothing-with-exponentially-weighted-moving-averages/
+    #     df_shear_stress_fwd = pd.Series(shear_stress)
+    #     df_shear_stress_bwd = pd.Series(shear_stress[::-1])
+    #     fwd = df_shear_stress_fwd.ewm(span=filter_param).mean() # take EWMA in fwd direction
+    #     bwd = df_shear_stress_bwd.ewm(span=filter_param).mean() # take EWMA in bwd direction
+    #     shear_stress_fld = np.vstack((fwd, bwd[::-1]))          # lump fwd and bwd together
+    #     shear_stress_fld = np.mean(shear_stress_fld, axis=0)    # average
+    # else:
+    #     print('original data')
+
+    shear_stress_median = medfilt(shear_stress, kernel_size=int(filter_param))
+    shear_stress_savgol = savgol_filter(shear_stress, window_length=int(filter_param), polyorder=3)
+    df_shear_stress_fwd = pd.Series(shear_stress)
+    df_shear_stress_bwd = pd.Series(shear_stress[::-1])
+    fwd = df_shear_stress_fwd.ewm(span=filter_param).mean()  # take EWMA in fwd direction
+    bwd = df_shear_stress_bwd.ewm(span=filter_param).mean()  # take EWMA in bwd direction
+    shear_stress_ewma = np.vstack((fwd, bwd[::-1]))  # lump fwd and bwd together
+    shear_stress_ewma = np.mean(shear_stress_ewma, axis=0)  # average
+
+    df_shear_stress = pd.DataFrame(np.stack((shear_stress, shear_stress_median, shear_stress_savgol, shear_stress_ewma), axis=1),
+                                  columns=['Data', 'Median', 'Savgol', 'EWMA'])
+
+    # calculate the logarithm of fractional changes
+    df_shear_stress['Data_return'] = (np.log(df_shear_stress['Data']/df_shear_stress['Data'].shift(-1)))
+    df_shear_stress['Median_return'] = (np.log(df_shear_stress['Median']/df_shear_stress['Median'].shift(-1)))
+    df_shear_stress['Savgol_return'] = (np.log(df_shear_stress['Savgol']/df_shear_stress['Savgol'].shift(-1)))
+    df_shear_stress['EWMA_return'] = (np.log(df_shear_stress['EWMA']/df_shear_stress['EWMA'].shift(-1)))
+
+    data_volatility = np.std(df_shear_stress.Data_return)
+    median_volatility = np.std(df_shear_stress.Median_return)
+    savgol_volatility = np.std(df_shear_stress.Savgol_return)
+    ewma_volatility = np.std(df_shear_stress.EWMA_return)
 
     fig = plt.figure(figsize=(8, 4))
     ax1 = fig.add_subplot(111)
-    ax1.plot(shear_strain, shear_stress, color=colors[0], alpha=0.1, linewidth=1, label='Original stress data')
-    ax1.plot(shear_strain, shear_stress_fld, color=colors[0], linewidth=1, label='Filtered stress data')
+    ax1.plot(shear_strain, shear_stress, color=colors[0], alpha=0.5, linewidth=1, label='data: ' + str(round(data_volatility, 6)))
+    ax1.plot(shear_strain, shear_stress_median+0.01, color=colors[1], linewidth=1, label='median: ' + str(round(median_volatility, 6)))
+    ax1.plot(shear_strain, shear_stress_savgol+0.02, color=colors[2], linewidth=1, label='savgol: ' + str(round(savgol_volatility, 6)))
+    ax1.plot(shear_strain, shear_stress_ewma+0.03, color=colors[3], linewidth=1, label='ewma: ' + str(round(ewma_volatility, 6)))
+
     ax1.set_xlabel('shear strain, $\gamma$', fontsize=12, labelpad=5)
     ax1.set_ylabel('shear stress, ' + r'$\tau$(MPa)', fontsize=12, labelpad=5)
     ax1.tick_params(axis='both', labelsize=12)
-    ax1.set_xlim(0.5, 0.6)
-    ax1.set_ylim(0.2, 0.3)
+    ax1.set_xlim(1.0, 1.1)
+    ax1.set_ylim(0.12, 0.22)
 
     ax2 = ax1.twinx()
-    ax2.plot(shear_strain, volumetric_strain, color=colors[1], linewidth=1, label='Volumetric strain')
+    ax2.plot(shear_strain, volumetric_strain, color=colors[4], linewidth=1, label='Volumetric strain')
     ax2.set_ylabel('volumetric strain, $\epsilon_v$', fontsize=12, labelpad=5)
     ax2.tick_params(axis="y", labelsize=12)
-    plt.show()
 
-    fig.legend(loc='center', fontsize=12)
+    fig.legend(fontsize=12)
     plt.grid(axis='both', color='grey', linestyle='--', lw=0.5, alpha=0.5)
     plt.grid()
-    plt.savefig(output_path + '/Macroscopic responses.png', dpi=600, bbox_inches='tight')
     plt.show()
+    plt.savefig(output_path + '/Macroscopic responses.png', dpi=600, bbox_inches='tight')
+
 
 
 # ==================================================================
@@ -186,13 +212,13 @@ if __name__ == '__main__':
 
     file_path = None
     file_name = None
-    case = 'shear-rate-2-press-1e7'
+    case = 'shear-rate-0.5-press-1e7'
     test_id = 1
-    shear_rate = 2
+    shear_rate = 0.5
     delta_strain = 1e-5
     strain_interval = 1e-5
-    filter_method = 'median'  # savgol, gaussian, median
-    filter_param = 101
+    filter_method = 'ewma'  # savgol, gaussian, median, ewma
+    filter_param = 11
     argList = argv
     argc = len(argList)
     i = 0
